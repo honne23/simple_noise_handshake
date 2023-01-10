@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod kad {
+mod noise {
     use std::{env, net::SocketAddr};
 
     use ed25519_dalek::Keypair;

@@ -80,7 +80,7 @@ cargo test -- -nocapture
 ### Only integration test and override default remote peer
 ```bash
 export PEER_ADDR="139.178.88.145:4001"
-cargo test --package noise_handshake --test noise_handshake_integration -- kad::test_handshake --exact --nocapture
+cargo test --package noise_handshake --test noise_handshake_integration -- noise::test_handshake --exact --nocapture
 ```
 
 
