@@ -42,11 +42,11 @@ mod tests {
 
         // Write from local
         println!("Local Write -> [e] -> Remote");
-        let stage1 = hss_local.write_message(&[], vec![MessagePattern::E]);
+        let stage1 = hss_local.write_message(&[], vec![MessagePattern::E]).unwrap();
 
         // Read and write from remote
         println!("Remote Read: [e]");
-        hss_remote.read_message(&stage1, vec![MessagePattern::E]);
+        hss_remote.read_message(&stage1, vec![MessagePattern::E]).unwrap();
         println!("Remote Write -> [e, ee, s, es] -> Local");
         let respond = hss_remote.write_message(
             b"2nd stage",
@@ -56,7 +56,7 @@ mod tests {
                 MessagePattern::S,
                 MessagePattern::Es,
             ],
-        );
+        ).unwrap();
         // Read from local
         println!("Local Read: [e, ee, s, es]");
         let stage2 = hss_local.read_message(
@@ -67,14 +67,14 @@ mod tests {
                 MessagePattern::S,
                 MessagePattern::Es,
             ],
-        );
+        ).unwrap();
         // Write back to remote
         println!("Local Write -> [s, se] -> Remote");
         let stage3 =
-            hss_local.write_message(b"3rd stage", vec![MessagePattern::S, MessagePattern::Se]);
+            hss_local.write_message(b"3rd stage", vec![MessagePattern::S, MessagePattern::Se]).unwrap();
         println!("Remote Read: [s, se]");
         let final_resp =
-            hss_remote.read_message(&stage3, vec![MessagePattern::S, MessagePattern::Se]);
+            hss_remote.read_message(&stage3, vec![MessagePattern::S, MessagePattern::Se]).unwrap();
 
         println!("output: {}", std::str::from_utf8(&final_resp).unwrap());
     }

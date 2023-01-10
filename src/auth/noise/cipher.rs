@@ -6,12 +6,20 @@ use sha2::Sha256;
 use x25519_dalek::{PublicKey, StaticSecret};
 
 use hmac::{Hmac, Mac};
+use std::error::Error;
 
 type HmacSha256 = Hmac<Sha256>;
 
 pub type CipherKey = Vec<u8>;
 
-// TODO: bounds on the nonce for security
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum CipherError {
+    #[error("could not decrypt payload")]
+    DecyrptionFail(),
+}
+
 
 /// An implementation of the [`CipherState`] object from the noise protocol.
 ///
@@ -90,23 +98,25 @@ impl CipherState {
     /// Auto increments the nonce value.
     ///
     /// See [CipherState](https://noiseprotocol.org/noise.html#the-cipherstate-object)
-    pub fn decrypt_with_ad(&mut self, ad: &[u8], ciphertext: &[u8]) -> Vec<u8> {
+    pub fn decrypt_with_ad(&mut self, ad: &[u8], ciphertext: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
         let key = self.k.as_ref();
         if let Some(k) = key {
             let cipher = ChaCha20Poly1305::new(Key::from_slice(k));
-            let result = cipher
+            let result = match cipher
                 .decrypt(
                     &self.get_current_nonce(),
                     Payload {
                         msg: ciphertext,
                         aad: ad,
                     },
-                )
-                .unwrap();
+                ) {
+                    Ok(content) => content,
+                    Err(_) => return Err(CipherError::DecyrptionFail().into())
+                };
             self.n += 1;
-            return result;
+            Ok(result)
         } else {
-            return ciphertext.to_vec();
+            return Ok(ciphertext.to_vec())
         }
     }
 

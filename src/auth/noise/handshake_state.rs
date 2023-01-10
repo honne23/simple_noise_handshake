@@ -2,10 +2,18 @@
 use super::cipher;
 use super::symmetric_state::SymmetricState;
 use super::{MessagePattern, DHLEN};
+use std::error::Error;
 use rand::rngs::OsRng;
 use x25519_dalek::{PublicKey, StaticSecret};
+use thiserror::Error;
 
 const PROTOCOL_NAME: &'static [u8; 32] = b"Noise_XX_25519_ChaChaPoly_SHA256";
+
+#[derive(Error, Debug)]
+pub enum HandshakeError {
+    #[error("the message pattern prvided was unsuported")]
+    MessagePatternUnsupported(),
+}
 
 #[derive(Clone)]
 pub struct StaticKeypair(pub PublicKey, pub StaticSecret);
@@ -57,65 +65,67 @@ impl HandshakeState {
     /// Calls "WriteMessage" from the the HandshakeState noise protocol specification:
     ///
     /// See [WriteMessage](https://noiseprotocol.org/noise.html#the-handshakestate-object)
-    pub fn write_message(&mut self, payload: &[u8], patterns: Vec<MessagePattern>) -> Vec<u8> {
+    pub fn write_message(&mut self, payload: &[u8], patterns: Vec<MessagePattern>) -> Result<Vec<u8>, Box<dyn Error>> {
         let mut buffer: Vec<u8> = Vec::new();
-        patterns.iter().for_each(|pattern| match pattern {
-            MessagePattern::E => {
-                let secret = StaticSecret::new(OsRng);
-                let public = PublicKey::from(&secret);
-                self.e = Some((public, secret));
-                let public_bytes = public.as_bytes().to_vec();
-                let mut buf_bytes = public_bytes.clone();
-                buffer.append(&mut buf_bytes);
-                self.symmetric_state.mix_hash(&public_bytes);
-            }
-            MessagePattern::Ee => {
-                self.symmetric_state.mix_key(&cipher::dh_static(
-                    &self.e.as_ref().unwrap().1,
-                    &self.re.unwrap(),
-                ));
-            }
-            MessagePattern::Es => {
-                if self.initiator {
+        for pattern in patterns {
+            match pattern {
+                MessagePattern::E => {
+                    let secret = StaticSecret::new(OsRng);
+                    let public = PublicKey::from(&secret);
+                    self.e = Some((public, secret));
+                    let public_bytes = public.as_bytes().to_vec();
+                    let mut buf_bytes = public_bytes.clone();
+                    buffer.append(&mut buf_bytes);
+                    self.symmetric_state.mix_hash(&public_bytes);
+                }
+                MessagePattern::Ee => {
                     self.symmetric_state.mix_key(&cipher::dh_static(
                         &self.e.as_ref().unwrap().1,
-                        &self.rs.unwrap(),
-                    ));
-                } else {
-                    self.symmetric_state
-                        .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
-                }
-            }
-            MessagePattern::S => {
-                let mut payload = self.symmetric_state.encrypt_and_hash(self.s.0.as_bytes());
-                buffer.append(&mut payload)
-            }
-            MessagePattern::Se => {
-                if self.initiator {
-                    self.symmetric_state
-                        .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
-                } else {
-                    self.symmetric_state.mix_key(&cipher::dh_static(
-                        &self.e.as_ref().unwrap().1,
-                        &self.rs.unwrap(),
+                        &self.re.unwrap(),
                     ));
                 }
+                MessagePattern::Es => {
+                    if self.initiator {
+                        self.symmetric_state.mix_key(&cipher::dh_static(
+                            &self.e.as_ref().unwrap().1,
+                            &self.rs.unwrap(),
+                        ));
+                    } else {
+                        self.symmetric_state
+                            .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
+                    }
+                }
+                MessagePattern::S => {
+                    let mut payload = self.symmetric_state.encrypt_and_hash(self.s.0.as_bytes());
+                    buffer.append(&mut payload)
+                }
+                MessagePattern::Se => {
+                    if self.initiator {
+                        self.symmetric_state
+                            .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
+                    } else {
+                        self.symmetric_state.mix_key(&cipher::dh_static(
+                            &self.e.as_ref().unwrap().1,
+                            &self.rs.unwrap(),
+                        ));
+                    }
+                }
+                _ => return Err(HandshakeError::MessagePatternUnsupported().into()),
             }
-            _ => return,
-        });
+        }
 
         let mut encrypted = self.symmetric_state.encrypt_and_hash(payload);
         buffer.append(&mut encrypted);
-        buffer
+        Ok(buffer)
     }
 
     /// Calls "ReadMessage" from the the HandshakeState noise protocol specification:
     ///
     /// [ReadMessage](https://noiseprotocol.org/noise.html#the-handshakestate-object)
-    pub fn read_message(&mut self, received: &[u8], patterns: Vec<MessagePattern>) -> Vec<u8> {
+    pub fn read_message(&mut self, received: &[u8], patterns: Vec<MessagePattern>) -> Result<Vec<u8>, Box<dyn Error>> {
         let mut received = received.to_vec();
-        patterns.iter().for_each(|pattern| {
-            match *pattern {
+        for pattern in patterns {
+            match pattern {
                 MessagePattern::E => {
                     let mut remote_public = [0u8; DHLEN];
                     received[..DHLEN]
@@ -140,8 +150,8 @@ impl HandshakeState {
                     let window = if has_key { ..DHLEN + 16 } else { ..DHLEN };
                     let temp = &received[window];
                     let mut remote_static_bytes: [u8; DHLEN] = [0; DHLEN];
-                    self.symmetric_state
-                        .decrypt_and_hash(temp)
+                    let payload = self.symmetric_state
+                        .decrypt_and_hash(temp)?
                         .iter()
                         .enumerate()
                         .for_each(|(index, val)| {
@@ -172,9 +182,9 @@ impl HandshakeState {
                         ));
                     }
                 }
-                _ => return,
-            };
-        });
+                _ => return Err(HandshakeError::MessagePatternUnsupported().into())
+            }
+        }
         self.symmetric_state.decrypt_and_hash(&received)
     }
 

@@ -46,7 +46,7 @@ where
         let mut connection = connection;
         let static_local = StaticKeypair::new();
         let mut hss = HandshakeState::new(true, &[], static_local, None, None, None);
-        let init = hss.write_message(&[], vec![MessagePattern::E]);
+        let init = hss.write_message(&[], vec![MessagePattern::E])?;
         writer(&mut connection, &init)?;
 
         // Stage 2: <- e, ee, s, es
@@ -59,7 +59,7 @@ where
                 MessagePattern::S,
                 MessagePattern::Es,
             ],
-        );
+        )?;
         let result: handshake::NoiseHandshakePayload =
             handshake::NoiseHandshakePayload::decode(&decrypted_response[..]).unwrap();
 
@@ -81,7 +81,7 @@ where
         // Stage 3
         let auth_payload = Self::auth_payload(peer_id, hss.s.clone())?;
         let encrypted_payload =
-            hss.write_message(&auth_payload, vec![MessagePattern::S, MessagePattern::Se]);
+            hss.write_message(&auth_payload, vec![MessagePattern::S, MessagePattern::Se])?;
         writer(&mut connection, &encrypted_payload)?;
 
         let (encrypter, decrypter) = hss.finalize();
@@ -100,8 +100,7 @@ impl<'a, C: Connection> SecureChannel for NoiseChannel<'a, C> {
         // Get noise message
         let encrypted_data = (self.reader)(&mut self.connection)?;
         // Decrypt noise message
-        let decrypted_payload = self.decrypter.decrypt_with_ad(&[], &encrypted_data);
-        Ok(decrypted_payload)
+        self.decrypter.decrypt_with_ad(&[], &encrypted_data)
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {

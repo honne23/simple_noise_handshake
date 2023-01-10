@@ -1,6 +1,6 @@
 use super::{cipher, HASHLEN};
 use sha2::{Digest, Sha256};
-
+use std::error::Error;
 pub struct SymmetricState {
     ck: Vec<u8>,
     h: Vec<u8>,
@@ -70,10 +70,10 @@ impl SymmetricState {
 
     /// Calls "DecryptAndHash" on the SymmetricState object defined in the protocol:
     /// [SymmetricState](https://noiseprotocol.org/noise.html#the-symmetricstate-object)
-    pub fn decrypt_and_hash(&mut self, ciphertext: &[u8]) -> Vec<u8> {
-        let plaintext = self.cipher_state.decrypt_with_ad(&self.h, ciphertext);
+    pub fn decrypt_and_hash(&mut self, ciphertext: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        let plaintext = self.cipher_state.decrypt_with_ad(&self.h, ciphertext)?;
         self.mix_hash(ciphertext);
-        plaintext
+        Ok(plaintext)
     }
 
     /// Calls "Split" on the SymmetricState object defined in the protocol:
