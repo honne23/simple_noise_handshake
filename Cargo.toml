@@ -9,7 +9,6 @@ path = "src/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-libp2p = {version="0.50.0", features=["kad", "webrtc", "tokio", "tcp", "dns", "noise", "mplex", "yamux", "websocket", "ping", "identify"]}
 uint = "0.9.5"
 rand = {version="0.7.0", features=["std"]} # dalek depends on an older version 
 sha2 = "0.10.6"
@@ -20,7 +19,7 @@ unsigned-varint = {version = "0.7.1", features = ["std"]}
 ed25519-dalek = "1.0.1"
 x25519-dalek = "1.1.0" # Version matched with ChaChaPoly for rand crate
 chacha20poly1305 = "0.10.1"
-hmac = "0.12.1"
+hmac = {version="0.12.1", features=["reset"]}
 thiserror = "1.0.38"
 
 [build-dependencies]

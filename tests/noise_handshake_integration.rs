@@ -23,16 +23,18 @@ mod kad {
             .unwrap_or_else(|_| String::from("5.161.92.43:4001"))
             .parse()
             .unwrap();
+
         let peer_id: Keypair = Keypair::generate(&mut OsRng);
         let connection = Multistream::connect(addr);
+
         assert!(connection.is_ok(), "peer is not reachable");
         let connection = connection.unwrap();
 
         // Consumes a connection so that you may only communicate securely
         let secure_channel =
             Multistream::upgrade::<NoiseProtocol>(connection, peer_id);
-        assert!(secure_channel.is_ok(), "peer does not support the noise transport");
 
+        assert!(secure_channel.is_ok(), "peer does not support the noise transport");
         let mut secure_channel = secure_channel.unwrap();
 
         // Negotiate multistream again over a secure connection

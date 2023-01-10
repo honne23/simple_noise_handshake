@@ -2,9 +2,9 @@ use ed25519_dalek::SecretKey;
 use x25519_dalek::{EphemeralSecret, StaticSecret};
 
 mod cipher;
+mod symmetric_state;
 pub mod handshake_state;
 pub mod protocol;
-mod symmetric_state;
 
 // number of bytes resultant from a SHA256 hash
 pub const DHLEN: usize = 32;

@@ -7,16 +7,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'ipfs_handshake'",
+            "name": "Debug unit tests in library 'noise_handshake'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=ipfs_handshake"
+                    "--package=noise_handshake"
                 ],
                 "filter": {
-                    "name": "ipfs_handshake",
+                    "name": "noise_handshake",
                     "kind": "lib"
                 }
             },
@@ -26,78 +26,21 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug integration test 'ipfs_integration'",
+            "name": "Debug integration test 'noise_integration'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--test=ipfs_integration",
-                    "--package=ipfs_handshake"
+                    "--test=noise_integration",
+                    "--package=noise_handshake"
                 ],
                 "filter": {
-                    "name": "ipfs_integration",
+                    "name": "noise_handshake_integration",
                     "kind": "test"
                 }
             },
             "args": [],
             "cwd": "${workspaceFolder}"
         },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'ping_integration'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=ping_integration",
-                    "--package=ipfs_handshake"
-                ],
-                "filter": {
-                    "name": "ping_integration",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'identify_integration'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=identify_integration",
-                    "--package=ipfs_handshake"
-                ],
-                "filter": {
-                    "name": "identify_integration",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'kad_handshake_integration'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=kad_handshake_integration",
-                    "--package=ipfs_handshake"
-                ],
-                "filter": {
-                    "name": "kad_handshake_integration",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        }
     ]
 }
