@@ -1,4 +1,12 @@
-# Entrypoint
+# Simple noise handshake
+This repository supplies a simplified implementation of the `Noise` handshake such that it only supports the `XX` handshake compatible with libp2p nodes (such as those on the `IPFS` network).
+
+`Connections` are generic objects that can manage an underlying byte stream over the network. The `Multistream` connection has been implemented for the purposes of this repository.
+
+`HandShakes` represent the logic for authentication handshakes that can take place over the network to secure a connection. This repository only allows you to `read` and `write` from a `SecureChannel`.
+
+
+## Entrypoint
 See `tests/` for examples on the usage of the library.
 
 ## Traits
@@ -76,8 +84,11 @@ cargo test --package noise_handshake --test noise_handshake_integration -- kad::
 ```
 
 
-## Peer ID
-In line with the S/Kademlia paper and libp2p spec, the `peer_id` is an ed25519 public key.
+## TODO
+- The `CipherState` implemention is barebones and likely lacks quite a few security checks (such as bounds on the `Nonces`)
+- At the moment there is no implementation for `async Connections`, these could straightforwardly be support by the `TokioTcpStream` as opposed to the `std::net::TcpStream` in use now.
+- Multiplexing is not implemented correctly outside of the integration test, support for `Yamux` and more general multiplexing should be developed
+- There are alot of `heap` allocations throughout, the hot-paths can likely be optimised to work more directly with slice references, it would be best to review this after implementing `async Connections`  to ensure we don't run into borrower semantics indirectly.
 
 
 
