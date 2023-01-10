@@ -16,7 +16,7 @@ mod kad {
     #[test]
     fn test_handshake() {
         let peer_id: Keypair = Keypair::generate(&mut OsRng);
-        let connection = Multistream::connect("52.169.14.227:26656".parse().unwrap()).unwrap();
+        let connection = Multistream::connect("5.161.92.43:4001".parse().unwrap()).unwrap();
 
         // Consumes a connection so that you may only communicate securely
         let mut secure_channel = Multistream::upgrade::<NoiseProtocol>(connection, peer_id).unwrap();

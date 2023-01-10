@@ -3,7 +3,7 @@ mod identify {
     use libp2p::{
         futures::StreamExt, identify, identity, swarm::SwarmEvent, Multiaddr, PeerId, Swarm,
     };
-
+    
     #[tokio::test]
     async fn test_identify() {
         let local_key = identity::Keypair::generate_ed25519();
@@ -39,7 +39,8 @@ mod identify {
                 }
                 // Prints out the info received via the identify event
                 SwarmEvent::Behaviour(identify::Event::Received { info, .. }) => {
-                    println!("Received {info:?}")
+                    println!("Received {info:?}");
+                    break
                 }
                 _ => {}
             }

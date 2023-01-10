@@ -96,7 +96,7 @@ impl<'a, C: Connection> SecureChannel for NoiseChannel<'a, C> {
     fn read(&mut self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         // Get noise message
         let encrypted_data = (self.reader)(&mut self.connection)?;
-        // Decrypte noise message
+        // Decrypt noise message
         let decrypted_payload = self.decrypter.decrypt_with_ad(&[], &encrypted_data);
         let payload = deserialize(&decrypted_payload)?;
         Ok(payload)
