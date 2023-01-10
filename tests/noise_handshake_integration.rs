@@ -9,14 +9,6 @@ mod kad {
     };
     use rand::rngs::OsRng;
 
-    /*
-     Working nodes:
-        - 147.75.84.175:4001 (Web3 Storage) https://github.com/web3-storage/web3.storage/blob/main/PEERS
-        - 139.178.88.145:4001 (Web3 Storage)
-        - 5.161.92.43:4001 (StorJ) https://docs.ipfs.tech/how-to/peering-with-content-providers/#content-provider-list
-
-    */
-
     #[test]
     fn test_handshake() {
         let addr: SocketAddr = env::var("PEER_ADDR")
