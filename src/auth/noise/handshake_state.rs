@@ -60,7 +60,7 @@ impl HandshakeState {
     pub fn write_message(&mut self, payload: &[u8], patterns: Vec<MessagePattern>) -> Vec<u8> {
         let mut buffer: Vec<u8> = Vec::new();
         patterns.iter().for_each(|pattern| match pattern {
-            MessagePattern::e => {
+            MessagePattern::E => {
                 let secret = StaticSecret::new(OsRng);
                 let public = PublicKey::from(&secret);
                 self.e = Some((public, secret));
@@ -69,13 +69,13 @@ impl HandshakeState {
                 buffer.append(&mut buf_bytes);
                 self.symmetric_state.mix_hash(&public_bytes);
             }
-            MessagePattern::ee => {
+            MessagePattern::Ee => {
                 self.symmetric_state.mix_key(&cipher::dh_static(
                     &self.e.as_ref().unwrap().1,
                     &self.re.unwrap(),
                 ));
             }
-            MessagePattern::es => {
+            MessagePattern::Es => {
                 if self.initiator {
                     self.symmetric_state.mix_key(&cipher::dh_static(
                         &self.e.as_ref().unwrap().1,
@@ -86,11 +86,11 @@ impl HandshakeState {
                         .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
                 }
             }
-            MessagePattern::s => {
+            MessagePattern::S => {
                 let mut payload = self.symmetric_state.encrypt_and_hash(self.s.0.as_bytes());
                 buffer.append(&mut payload)
             }
-            MessagePattern::se => {
+            MessagePattern::Se => {
                 if self.initiator {
                     self.symmetric_state
                         .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
@@ -116,7 +116,7 @@ impl HandshakeState {
         let mut received = received.to_vec();
         patterns.iter().for_each(|pattern| {
             match *pattern {
-                MessagePattern::e => {
+                MessagePattern::E => {
                     let mut remote_public = [0u8; DHLEN];
                     received[..DHLEN]
                         .iter()
@@ -129,13 +129,13 @@ impl HandshakeState {
                     self.symmetric_state.mix_hash(&remote_public);
                     received.drain(..DHLEN);
                 }
-                MessagePattern::ee => {
+                MessagePattern::Ee => {
                     self.symmetric_state.mix_key(&cipher::dh_static(
                         &self.e.as_ref().unwrap().1,
                         &self.re.unwrap(),
                     ));
                 }
-                MessagePattern::s => {
+                MessagePattern::S => {
                     let has_key = self.symmetric_state.cipher_state.has_key();
                     let window = if has_key { ..DHLEN + 16 } else { ..DHLEN };
                     let temp = &received[window];
@@ -150,7 +150,7 @@ impl HandshakeState {
                     self.rs = Some(PublicKey::from(remote_static_bytes));
                     received.drain(window);
                 }
-                MessagePattern::es => {
+                MessagePattern::Es => {
                     if self.initiator {
                         self.symmetric_state.mix_key(&cipher::dh_static(
                             &self.e.as_ref().unwrap().1,
@@ -161,7 +161,7 @@ impl HandshakeState {
                             .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));
                     }
                 }
-                MessagePattern::se => {
+                MessagePattern::Se => {
                     if self.initiator {
                         self.symmetric_state
                             .mix_key(&cipher::dh_static(&self.s.1, &self.re.unwrap()));

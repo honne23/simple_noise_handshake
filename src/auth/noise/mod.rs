@@ -11,12 +11,12 @@ pub const DHLEN: usize = 32;
 pub const HASHLEN: usize = 32;
 
 pub enum MessagePattern {
-    e,
-    s,
-    ee,
-    es,
-    se,
-    ss,
+    E,
+    S,
+    Ee,
+    Es,
+    Se,
+    Ss,
 }
 
 pub enum PrivateKeyType<'a> {
@@ -33,7 +33,7 @@ mod tests {
             handshake_state::{HandshakeState, StaticKeypair},
             MessagePattern,
         };
-        
+
         let static_local = StaticKeypair::new();
         let static_remote = StaticKeypair::new();
 
@@ -42,19 +42,19 @@ mod tests {
 
         // Write from local
         println!("Local Write -> [e] -> Remote");
-        let stage1 = hss_local.write_message(&[], vec![MessagePattern::e]);
+        let stage1 = hss_local.write_message(&[], vec![MessagePattern::E]);
 
         // Read and write from remote
         println!("Remote Read: [e]");
-        hss_remote.read_message(&stage1, vec![MessagePattern::e]);
+        hss_remote.read_message(&stage1, vec![MessagePattern::E]);
         println!("Remote Write -> [e, ee, s, es] -> Local");
         let respond = hss_remote.write_message(
             b"2nd stage",
             vec![
-                MessagePattern::e,
-                MessagePattern::ee,
-                MessagePattern::s,
-                MessagePattern::es,
+                MessagePattern::E,
+                MessagePattern::Ee,
+                MessagePattern::S,
+                MessagePattern::Es,
             ],
         );
         // Read from local
@@ -62,19 +62,19 @@ mod tests {
         let stage2 = hss_local.read_message(
             &respond,
             vec![
-                MessagePattern::e,
-                MessagePattern::ee,
-                MessagePattern::s,
-                MessagePattern::es,
+                MessagePattern::E,
+                MessagePattern::Ee,
+                MessagePattern::S,
+                MessagePattern::Es,
             ],
         );
         // Write back to remote
         println!("Local Write -> [s, se] -> Remote");
         let stage3 =
-            hss_local.write_message(b"3rd stage", vec![MessagePattern::s, MessagePattern::se]);
+            hss_local.write_message(b"3rd stage", vec![MessagePattern::S, MessagePattern::Se]);
         println!("Remote Read: [s, se]");
         let final_resp =
-            hss_remote.read_message(&stage3, vec![MessagePattern::s, MessagePattern::se]);
+            hss_remote.read_message(&stage3, vec![MessagePattern::S, MessagePattern::Se]);
 
         println!("output: {}", std::str::from_utf8(&final_resp).unwrap());
     }

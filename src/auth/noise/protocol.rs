@@ -46,7 +46,7 @@ where
         let mut connection = connection;
         let static_local = StaticKeypair::new();
         let mut hss = HandshakeState::new(true, &[], static_local, None, None, None);
-        let init = hss.write_message(&[], vec![MessagePattern::e]);
+        let init = hss.write_message(&[], vec![MessagePattern::E]);
         writer(&mut connection, &init)?;
 
         // Stage 2: <- e, ee, s, es
@@ -54,10 +54,10 @@ where
         let decrypted_response = hss.read_message(
             &encrypted_response,
             vec![
-                MessagePattern::e,
-                MessagePattern::ee,
-                MessagePattern::s,
-                MessagePattern::es,
+                MessagePattern::E,
+                MessagePattern::Ee,
+                MessagePattern::S,
+                MessagePattern::Es,
             ],
         );
         let result: handshake::NoiseHandshakePayload =
@@ -81,7 +81,7 @@ where
         // Stage 3
         let auth_payload = Self::auth_payload(peer_id, hss.s.clone())?;
         let encrypted_payload =
-            hss.write_message(&auth_payload, vec![MessagePattern::s, MessagePattern::se]);
+            hss.write_message(&auth_payload, vec![MessagePattern::S, MessagePattern::Se]);
         writer(&mut connection, &encrypted_payload)?;
 
         let (encrypter, decrypter) = hss.finalize();
