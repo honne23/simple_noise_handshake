@@ -3,11 +3,11 @@ use std::{error::Error, net::SocketAddr};
 
 use ed25519_dalek::Keypair;
 
-use crate::auth::{HandShake, SecureChannel};
+use crate::auth::{HandShake, SecureChannel, AuthProtocol};
 pub trait Connection {
 
     /// Connect to a remote peer using their [std::net::SocketAddr]
-    fn connect(address: SocketAddr) -> Result<Self, Box<dyn Error>>
+    fn connect(address: SocketAddr, auth_protocol: AuthProtocol) -> Result<Self, Box<dyn Error>>
     where
         Self: Sized;
 

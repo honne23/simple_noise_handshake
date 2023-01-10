@@ -4,7 +4,7 @@ mod kad {
 
     use ed25519_dalek::Keypair;
     use noise_handshake::{
-        auth::noise::protocol::NoiseProtocol,
+        auth::{noise::protocol::NoiseProtocol, AuthProtocol},
         connection::{multistream::Multistream, Connection},
     };
     use rand::rngs::OsRng;
@@ -17,7 +17,7 @@ mod kad {
             .unwrap();
 
         let peer_id: Keypair = Keypair::generate(&mut OsRng);
-        let connection = Multistream::connect(addr);
+        let connection = Multistream::connect(addr, AuthProtocol::Noise);
 
         assert!(connection.is_ok(), "peer is not reachable");
         let connection = connection.unwrap();

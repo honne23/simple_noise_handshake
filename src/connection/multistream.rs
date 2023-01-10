@@ -5,7 +5,7 @@ use std::{
 };
 use unsigned_varint::{decode, encode};
 
-use crate::auth::{HandShake, SecureChannel};
+use crate::auth::{HandShake, SecureChannel, AuthProtocol};
 use ed25519_dalek::Keypair;
 
 use super::Connection;
@@ -16,7 +16,7 @@ use thiserror::Error;
 pub enum MultistreamError {
     #[error("peer does not accept /multistream/1.0.0 connections")]
     Negotiation(),
-    #[error("the peer does not support the /noise handshake")]
+    #[error("the peer does not support the supplied auth protocol")]
     Auth(),
 }
 
@@ -25,7 +25,7 @@ pub struct Multistream {
 }
 
 impl Connection for Multistream {
-    fn connect(address: SocketAddr) -> Result<Self, Box<dyn std::error::Error>> {
+    fn connect(address: SocketAddr, auth_protocol: AuthProtocol) -> Result<Self, Box<dyn std::error::Error>> {
         let stream = TcpStream::connect(address)?;
         let mut connection = Self::new(stream);
         connection.write(b"/multistream/1.0.0\n", false)?;
@@ -35,10 +35,11 @@ impl Connection for Multistream {
             return Err(MultistreamError::Negotiation().into());
         }
 
-        connection.write(b"/noise\n", false)?;
+        connection.write(auth_protocol.name(), false)?;
         let received = connection.read(false)?;
         let received = Self::deserialize(&received)?;
-        if std::str::from_utf8(&received)? != "/noise" {
+        let auth_str = std::str::from_utf8(&auth_protocol.name()[..auth_protocol.name().len() -1])?;
+        if std::str::from_utf8(&received)? != auth_str {
             return Err(MultistreamError::Auth().into());
         }
         Ok(connection)

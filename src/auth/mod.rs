@@ -4,6 +4,17 @@ use crate::connection::Connection;
 use std::error::Error;
 pub mod noise;
 
+pub enum AuthProtocol {
+    Noise,
+}
+impl AuthProtocol {
+    pub fn name(&self) -> &[u8] {
+        match *self {
+            AuthProtocol::Noise => b"/noise\n"
+        }
+    }
+}
+
 pub trait HandShake<'a, C: Connection> {
     /// Channel lifetime is tied to the lifetime of the Connection
     type Channel<'channel>: SecureChannel;
