@@ -24,16 +24,21 @@ mod kad {
             .parse()
             .unwrap();
         let peer_id: Keypair = Keypair::generate(&mut OsRng);
-        let connection = Multistream::connect(addr).unwrap();
+        let connection = Multistream::connect(addr);
+        assert!(connection.is_ok(), "peer is not reachable");
+        let connection = connection.unwrap();
 
         // Consumes a connection so that you may only communicate securely
-        let mut secure_channel =
-            Multistream::upgrade::<NoiseProtocol>(connection, peer_id).unwrap();
+        let secure_channel =
+            Multistream::upgrade::<NoiseProtocol>(connection, peer_id);
+        assert!(secure_channel.is_ok(), "peer does not support the noise transport");
+
+        let mut secure_channel = secure_channel.unwrap();
 
         // Negotiate multistream again over a secure connection
         let response = secure_channel.read().unwrap();
         let response = Multistream::deserialize(&response).unwrap();
-        assert!(std::str::from_utf8(&response).unwrap() == "/multistream/1.0.0");
+        assert!(std::str::from_utf8(&response).unwrap() == "/multistream/1.0.0", "peer does not support multistream protocol");
 
         secure_channel.write(&Multistream::serialize(b"/multistream/1.0.0\n")).unwrap();
 
@@ -41,18 +46,18 @@ mod kad {
         secure_channel.write(&Multistream::serialize(b"/yamux/1.0.0\n")).unwrap();
         let response = secure_channel.read().unwrap();
         let response = Multistream::deserialize(&response).unwrap();
-        assert!(std::str::from_utf8(&response).unwrap() == "/yamux/1.0.0");
+        assert!(std::str::from_utf8(&response).unwrap() == "/yamux/1.0.0", "peer does not support yamux multiplexing");
 
         // Setup Yamux connection
         // SYN
         secure_channel.write(&encapsulate_yamux(b"", true)).unwrap();
         let response = secure_channel.read().unwrap();
-        assert!(response == vec![0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert!(response == vec![0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], "yamux stream not synchronised");
         
         // ACK
         secure_channel.write(&encapsulate_yamux(b"", false)).unwrap();
         let response = secure_channel.read().unwrap();
-        assert!(response == vec![0, 1, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0]);
+        assert!(response == vec![0, 1, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0], "yamux stream not acknowledged");
 
         // Get allowable protocols
         secure_channel.write(&encapsulate_yamux(b"", false)).unwrap();
