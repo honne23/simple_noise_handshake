@@ -1,6 +1,8 @@
 
 #[cfg(test)]
 mod kad {
+    use std::{net::SocketAddr, env};
+
     use ed25519_dalek::Keypair;
     use ipfs_handshake::{connection::{multistream::Multistream, Connection}, auth::noise::protocol::NoiseProtocol};
     use rand::rngs::OsRng;
@@ -15,8 +17,9 @@ mod kad {
 
     #[test]
     fn test_handshake() {
+        let addr : SocketAddr = env::var("PEER_ADDR").unwrap_or_else(|_| {String::from("5.161.92.43:4001")}).parse().unwrap();
         let peer_id: Keypair = Keypair::generate(&mut OsRng);
-        let connection = Multistream::connect("5.161.92.43:4001".parse().unwrap()).unwrap();
+        let connection = Multistream::connect(addr).unwrap();
 
         // Consumes a connection so that you may only communicate securely
         let mut secure_channel = Multistream::upgrade::<NoiseProtocol>(connection, peer_id).unwrap();

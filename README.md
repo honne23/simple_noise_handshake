@@ -13,17 +13,20 @@
 7. https://github.com/libp2p/go-libp2p/tree/master/p2p/security/noise
 
 ## Testing
-Simply run:
+### All Tests:
 ```bash
 cargo test
 ```
-to execute all tests including intergration tests.
-
-To see debug output run:
+### All tests with debug output
 ```bash
 cargo test -- -nocapture
 ```
 
+### Only integration test and override default remote peer
+```bash
+export PEER_ADDR="139.178.88.145:4001"
+cargo test --package ipfs_handshake --test noise_handshake_integration -- kad::test_handshake --exact --nocapture
+```
 
 
 ## Peer ID
