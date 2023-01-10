@@ -3,7 +3,7 @@ use prost::Message;
 
 use crate::{
     auth::{noise::MessagePattern, HandShake, SecureChannel},
-    connection::{Connection, multistream::{deserialize, serialize}},
+    connection::Connection,
     handshake,
 };
 
@@ -13,6 +13,9 @@ use super::{
 };
 
 use std::error::Error;
+
+const SIGNATURE_PREFIX: &'static [u8; 24] = b"noise-libp2p-static-key:";
+
 pub struct NoiseProtocol {}
 
 pub struct NoiseChannel<'a, C: Connection> {
@@ -67,7 +70,7 @@ where
 
         // Get remote static noise key
         let remote_static = hss.rs.as_ref().unwrap().as_bytes();
-        let message = ["noise-libp2p-static-key:".as_bytes(), remote_static].concat();
+        let message = [&SIGNATURE_PREFIX[..], &remote_static[..]].concat();
 
         // Get signature:
         let signature = Signature::from_bytes(&result.identity_sig.unwrap()).unwrap();
@@ -98,13 +101,11 @@ impl<'a, C: Connection> SecureChannel for NoiseChannel<'a, C> {
         let encrypted_data = (self.reader)(&mut self.connection)?;
         // Decrypt noise message
         let decrypted_payload = self.decrypter.decrypt_with_ad(&[], &encrypted_data);
-        let payload = deserialize(&decrypted_payload)?;
-        Ok(payload)
+        Ok(decrypted_payload)
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-        let payload = serialize(data);
-        let encrypted_data = self.encrypter.encrypt_with_ad(&[], &payload);
+        let encrypted_data = self.encrypter.encrypt_with_ad(&[], &data);
         (self.writer)(&mut self.connection, &encrypted_data)?;
         Ok(())
     }
@@ -127,11 +128,7 @@ impl NoiseProtocol {
         payload.identity_key = Some(buf);
 
         // Add local signature to payload
-        let data = [
-            "noise-libp2p-static-key:".as_bytes(),
-            noise_static_key.0.as_bytes(),
-        ]
-        .concat();
+        let data = [&SIGNATURE_PREFIX[..], &noise_static_key.0.as_bytes()[..]].concat();
         let signature = keypair.sign(&data).to_bytes().to_vec();
         payload.identity_sig = Some(signature);
 

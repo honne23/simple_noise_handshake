@@ -5,6 +5,8 @@ use super::{MessagePattern, DHLEN};
 use rand::rngs::OsRng;
 use x25519_dalek::{PublicKey, StaticSecret};
 
+const PROTOCOL_NAME: &'static [u8; 32] = b"Noise_XX_25519_ChaChaPoly_SHA256";
+
 #[derive(Clone)]
 pub struct StaticKeypair(pub PublicKey, pub StaticSecret);
 
@@ -22,14 +24,16 @@ pub struct HandshakeState {
     initiator: bool,
     symmetric_state: SymmetricState,
 
-    pub s: StaticKeypair,        // local static
-    e: Option<EphemeralKeypair>, // local ephemeral
+    pub s: StaticKeypair, // local static
     pub rs: Option<PublicKey>,
+    e: Option<EphemeralKeypair>, // local ephemeral
     re: Option<PublicKey>,
 }
 
 impl HandshakeState {
-    // handshake pattern always XX
+    /// Calls "Initialize" from the the HandshakeState noise protocol specification:
+    ///
+    /// See [Initialize](https://noiseprotocol.org/noise.html#the-handshakestate-object)
     pub fn new(
         initiator: bool,
         prologue: &[u8],
@@ -38,7 +42,7 @@ impl HandshakeState {
         rs: Option<PublicKey>,
         re: Option<PublicKey>,
     ) -> HandshakeState {
-        let mut sym_state = SymmetricState::new("Noise_XX_25519_ChaChaPoly_SHA256");
+        let mut sym_state = SymmetricState::new(PROTOCOL_NAME);
         sym_state.mix_hash(prologue);
         HandshakeState {
             s: s,
@@ -50,7 +54,9 @@ impl HandshakeState {
         }
     }
 
-    // only the messages relevant for the XX communication are implemented
+    /// Calls "WriteMessage" from the the HandshakeState noise protocol specification:
+    ///
+    /// See [WriteMessage](https://noiseprotocol.org/noise.html#the-handshakestate-object)
     pub fn write_message(&mut self, payload: &[u8], patterns: Vec<MessagePattern>) -> Vec<u8> {
         let mut buffer: Vec<u8> = Vec::new();
         patterns.iter().for_each(|pattern| match pattern {
@@ -103,6 +109,9 @@ impl HandshakeState {
         buffer
     }
 
+    /// Calls "ReadMessage" from the the HandshakeState noise protocol specification:
+    ///
+    /// [ReadMessage](https://noiseprotocol.org/noise.html#the-handshakestate-object)
     pub fn read_message(&mut self, received: &[u8], patterns: Vec<MessagePattern>) -> Vec<u8> {
         let mut received = received.to_vec();
         patterns.iter().for_each(|pattern| {
@@ -169,6 +178,7 @@ impl HandshakeState {
         self.symmetric_state.decrypt_and_hash(&received)
     }
 
+    /// A helper function used to produce two [cipher::CipherState] which encrypt and decrypt messages on the transport.
     pub fn finalize(&self) -> (cipher::CipherState, cipher::CipherState) {
         self.symmetric_state.split()
     }

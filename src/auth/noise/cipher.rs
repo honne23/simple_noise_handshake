@@ -9,33 +9,50 @@ use hmac::{Hmac, Mac};
 
 type HmacSha256 = Hmac<Sha256>;
 
-use super::HASHLEN;
-
 pub type CipherKey = Vec<u8>;
 
+// TODO: bounds on the nonce for security
+
+/// An implementation of the [`CipherState`] object from the noise protocol.
+///
+/// See [CipherState](https://noiseprotocol.org/noise.html#the-cipherstate-object)
 pub struct CipherState {
     pub k: Option<CipherKey>, //32 bytes
     n: u64,                   //unsigned int nonce
 }
 
 impl CipherState {
+    /// A helper function that fufills the role of `InitializeKey(empty)` from the noise spec.
+    ///
+    /// See [InitializeKey](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     pub fn new() -> Self {
         CipherState { k: None, n: 0 }
     }
 
+    /// A function that calls `InitializeKey(key)` on the `CipherState` object defined in the protocol.
+    ///
+    /// See [InitializeKey](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     pub fn initialise_key(&mut self, k: &[u8]) {
         self.k = Some(k.to_vec());
         self.n = 0;
     }
 
+    /// A function that calls `SetNonce` on the `CipherState` object defined in the protocol.
+    ///
+    /// See [SetNonce](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     fn set_nonce(&mut self, nonce: u64) {
         self.n = nonce;
     }
 
+    /// A function that calls `HasKey` on the `CipherState` object defined in the protocol.
+    /// Used to verify the existence of a key publicly.
+    ///  
+    /// See [HasKey](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     pub fn has_key(&self) -> bool {
         self.k.is_some()
     }
 
+    /// A helper function that constructs the 96 bit nonce used in the [chacha20poly1305::ChaCha20Poly1305] cipher.
     fn get_current_nonce(&self) -> Nonce {
         let nb: [u8; 8] = self.n.to_le_bytes();
         let mut nonce: [u8; 12] = [0; 12];
@@ -45,6 +62,10 @@ impl CipherState {
         Nonce::from(nonce)
     }
 
+    /// A function that calls `EncryptWithAd` on the `CipherState` object defined in the protocol.
+    /// Auto-increments the nonce value.
+    ///  
+    /// See [EncryptWithAd](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     pub fn encrypt_with_ad(&mut self, ad: &[u8], plaintext: &[u8]) -> Vec<u8> {
         let key = self.k.as_ref();
         if let Some(k) = key {
@@ -65,6 +86,10 @@ impl CipherState {
         }
     }
 
+    /// A function that calls `EncryptWithAd` on the `CipherState` object defined in the protocol.
+    /// Auto increments the nonce value.
+    ///
+    /// See [CipherState](https://noiseprotocol.org/noise.html#the-cipherstate-object)
     pub fn decrypt_with_ad(&mut self, ad: &[u8], ciphertext: &[u8]) -> Vec<u8> {
         let key = self.k.as_ref();
         if let Some(k) = key {
@@ -84,15 +109,20 @@ impl CipherState {
             return ciphertext.to_vec();
         }
     }
-    /*
+
+    /// Skeleta implementation of `Rekey()` from the spec.
+    /// Libp2p does not support `Rekey` as part of their connection specification.
+    ///
+    /// See the libp2p connection spec [here](https://github.com/libp2p/specs/tree/master/connections).
+    /// See the libp2p noise spec [here](https://github.com/libp2p/specs/blob/master/noise/README.md).
     pub fn rekey(&mut self) {
-        let key = ChaCha20Poly1305::generate_key(&mut chaRng);
-        let cipher = ChaCha20Poly1305::new(&key);
-        self.k = Some(cipher);
+        todo!()
     }
-     */
 }
 
+/// Implementation of the HKDF function specified in the noise protocol.
+///
+/// See [HKDF()](https://noiseprotocol.org/noise.html#hash-functions)
 pub fn hkdf(
     chaining_key: &[u8],
     input_key_material: &[u8],
@@ -120,6 +150,9 @@ pub fn hkdf(
     }
 }
 
+/// Implements the [x25519_dalek] `dh` function specified as part of the noise protocol.
+///
+/// See [DH()](https://noiseprotocol.org/noise.html#dh-functions)
 pub fn dh_static(local_private: &StaticSecret, remote_public: &PublicKey) -> Vec<u8> {
     local_private
         .diffie_hellman(remote_public)

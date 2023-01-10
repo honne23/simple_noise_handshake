@@ -26,13 +26,14 @@ pub enum PrivateKeyType<'a> {
 }
 
 mod tests {
-    use crate::auth::noise::{
-        handshake_state::{HandshakeState, StaticKeypair},
-        MessagePattern,
-    };
-
+    
     #[test]
     fn test_xx() {
+        use crate::auth::noise::{
+            handshake_state::{HandshakeState, StaticKeypair},
+            MessagePattern,
+        };
+        
         let static_local = StaticKeypair::new();
         let static_remote = StaticKeypair::new();
 
