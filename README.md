@@ -83,6 +83,9 @@ export PEER_ADDR="139.178.88.145:4001"
 cargo test --package noise_handshake --test noise_handshake_integration -- noise::test_handshake --exact --nocapture
 ```
 
+### Verify output
+The integration test should print out `YAMUX RESP: "\u{13}/multistream/1.0.0\n\u{f}/ipfs/id/1.0.0\n"` upon successful connection to a peer to
+indicate that the `authentication` handshake and `multiplexer` has been negotiated.
 
 ## TODO
 - The `CipherState` implemention is barebones and likely lacks quite a few security checks (such as bounds on the `Nonces`)
