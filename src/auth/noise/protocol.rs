@@ -75,8 +75,7 @@ where
         // Get signature:
         let signature = Signature::from_bytes(&result.identity_sig.unwrap()).unwrap();
         // message is remote static key
-        let sig_verify = remote_id.verify(&message, &signature);
-        assert!(sig_verify.is_ok());
+        remote_id.verify(&message, &signature)?;
 
         // Stage 3
         let auth_payload = Self::auth_payload(peer_id, hss.s.clone())?;
