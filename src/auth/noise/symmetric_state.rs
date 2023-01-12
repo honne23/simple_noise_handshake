@@ -62,10 +62,10 @@ impl SymmetricState {
 
     /// Calls "EncryptAndHash" on the SymmetricState object defined in the protocol:
     /// [SymmetricState](https://noiseprotocol.org/noise.html#the-symmetricstate-object)
-    pub fn encrypt_and_hash(&mut self, plaintext: &[u8]) -> Vec<u8> {
-        let cipher = self.cipher_state.encrypt_with_ad(&self.h, plaintext);
+    pub fn encrypt_and_hash(&mut self, plaintext: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        let cipher = self.cipher_state.encrypt_with_ad(&self.h, plaintext)?;
         self.mix_hash(&cipher);
-        cipher
+        Ok(cipher)
     }
 
     /// Calls "DecryptAndHash" on the SymmetricState object defined in the protocol:

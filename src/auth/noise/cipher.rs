@@ -17,7 +17,9 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum CipherError {
     #[error("could not decrypt payload")]
-    DecyrptionFail(),
+    DecryptionFail(),
+    #[error("failed to encrypt data")]
+    EncryptionFail()
 }
 
 
@@ -74,23 +76,25 @@ impl CipherState {
     /// Auto-increments the nonce value.
     ///  
     /// See [EncryptWithAd](https://noiseprotocol.org/noise.html#the-cipherstate-object)
-    pub fn encrypt_with_ad(&mut self, ad: &[u8], plaintext: &[u8]) -> Vec<u8> {
+    pub fn encrypt_with_ad(&mut self, ad: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
         let key = self.k.as_ref();
         if let Some(k) = key {
             let cipher = ChaCha20Poly1305::new(Key::from_slice(k));
-            let result = cipher
+            let result = match cipher
                 .encrypt(
                     &self.get_current_nonce(),
                     Payload {
                         msg: plaintext,
                         aad: ad,
                     },
-                )
-                .unwrap();
+                ) {
+                    Ok(payload) => payload,
+                    Err(_) => return Err(CipherError::EncryptionFail().into())
+                };
             self.n += 1;
-            return result;
+            return Ok(result);
         } else {
-            return plaintext.to_vec();
+            return Ok(plaintext.to_owned());
         }
     }
 
@@ -111,7 +115,7 @@ impl CipherState {
                     },
                 ) {
                     Ok(content) => content,
-                    Err(_) => return Err(CipherError::DecyrptionFail().into())
+                    Err(_) => return Err(CipherError::DecryptionFail().into())
                 };
             self.n += 1;
             Ok(result)

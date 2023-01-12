@@ -96,8 +96,8 @@ impl HandshakeState {
                     }
                 }
                 MessagePattern::S => {
-                    let mut payload = self.symmetric_state.encrypt_and_hash(self.s.0.as_bytes());
-                    buffer.append(&mut payload)
+                    let mut payload = self.symmetric_state.encrypt_and_hash(self.s.0.as_bytes())?;
+                    buffer.append(&mut payload);
                 }
                 MessagePattern::Se => {
                     if self.initiator {
@@ -114,7 +114,7 @@ impl HandshakeState {
             }
         }
 
-        let mut encrypted = self.symmetric_state.encrypt_and_hash(payload);
+        let mut encrypted = self.symmetric_state.encrypt_and_hash(payload)?;
         buffer.append(&mut encrypted);
         Ok(buffer)
     }

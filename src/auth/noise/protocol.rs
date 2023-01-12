@@ -103,7 +103,7 @@ impl<'a, C: Connection> SecureChannel for NoiseChannel<'a, C> {
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-        let encrypted_data = self.encrypter.encrypt_with_ad(&[], &data);
+        let encrypted_data = self.encrypter.encrypt_with_ad(&[], &data)?;
         (self.writer)(&mut self.connection, &encrypted_data)?;
         Ok(())
     }
