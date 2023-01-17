@@ -13,9 +13,7 @@ impl SymmetricState {
     pub fn new(protocol_name: &[u8]) -> SymmetricState {
         let h: Vec<u8> = if protocol_name.len() <= HASHLEN {
             let mut h_buf = [0u8; HASHLEN];
-            for index in 0..protocol_name.len() {
-                h_buf[index] = protocol_name[index];
-            }
+            h_buf[..protocol_name.len()].copy_from_slice(protocol_name);
             h_buf.to_vec()
         } else {
             let mut hasher = Sha256::new();
@@ -24,8 +22,8 @@ impl SymmetricState {
         };
         let ck = h.clone();
         SymmetricState {
-            ck: ck,
-            h: h,
+            ck,
+            h,
             cipher_state: cipher::CipherState::new(),
         }
     }
@@ -51,8 +49,9 @@ impl SymmetricState {
 
     /// Calls "MixKey" on the SymmetricState object defined in the protocol:
     /// [SymmetricState](https://noiseprotocol.org/noise.html#the-symmetricstate-object)
-    ///
-    /// NOTE: At the moment no protocols that support this have been implemented.
+    /// 
+    /// NOTE: At the moment no protocols that support this have been implemented. Provided for completeness.
+    #[allow(dead_code)]
     fn mix_key_and_hash(&mut self, input_key_material: &[u8]) {
         let (ck, temp_h, temp_k) = cipher::hkdf(&self.ck, input_key_material, 3);
         self.ck = ck;

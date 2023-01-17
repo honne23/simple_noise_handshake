@@ -1,3 +1,4 @@
+#![feature(trait_alias)]
 pub mod auth;
 pub mod connection;
 pub mod handshake {

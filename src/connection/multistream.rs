@@ -52,7 +52,7 @@ impl Connection for Multistream {
     where
         Self: Sized + 'a,
     {
-        let reader = |x: &mut Multistream| -> Result<Vec<u8>, Box<dyn Error>> { Ok(x.read(true)?) };
+        let reader = |x: &mut Multistream| -> Result<Vec<u8>, Box<dyn Error>> { x.read(true) };
 
         let writer = |x: &mut Multistream, data: &[u8]| -> Result<(), Box<dyn Error>> {
             x.write(data, true)?;
@@ -64,12 +64,12 @@ impl Connection for Multistream {
 
 impl Multistream {
     pub fn new(stream: TcpStream) -> Self {
-        Multistream { stream: stream }
+        Multistream { stream }
     }
     fn write(&mut self, message: &[u8], secure: bool) -> Result<(), Box<dyn Error>> {
         if secure {
             let data_len = (message.len() as u16).to_be_bytes();
-            let payload = [&data_len[..], &message[..]].concat();
+            let payload = [&data_len[..], message].concat();
             self.stream.write_all(&payload)?;
             self.stream.flush()?;
             Ok(())
@@ -84,10 +84,10 @@ impl Multistream {
     fn read(&mut self, secure: bool) -> Result<Vec<u8>, Box<dyn Error>> {
         if secure {
             let mut msg_len = [0u8; 2];
-            self.stream.read(&mut msg_len)?;
+            self.stream.read_exact(&mut msg_len)?;
             let proto_len = u16::from_be_bytes(msg_len);
             let mut encrypted = vec![0u8; proto_len.into()];
-            self.stream.read(&mut encrypted)?;
+            self.stream.read_exact(&mut encrypted)?;
             Ok(encrypted)
         } else {
             let mut reader = BufReader::new(self.stream.try_clone()?);

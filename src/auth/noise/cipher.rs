@@ -47,13 +47,6 @@ impl CipherState {
         self.n = 0;
     }
 
-    /// A function that calls `SetNonce` on the `CipherState` object defined in the protocol.
-    ///
-    /// See [SetNonce](https://noiseprotocol.org/noise.html#the-cipherstate-object)
-    fn set_nonce(&mut self, nonce: u64) {
-        self.n = nonce;
-    }
-
     /// A function that calls `HasKey` on the `CipherState` object defined in the protocol.
     /// Used to verify the existence of a key publicly.
     ///  
@@ -66,9 +59,7 @@ impl CipherState {
     fn get_current_nonce(&self) -> Nonce {
         let nb: [u8; 8] = self.n.to_le_bytes();
         let mut nonce: [u8; 12] = [0; 12];
-        for index in 4..12 {
-            nonce[index] = nb[index - 4];
-        }
+        nonce[4..12].copy_from_slice(&nb[..(12 - 4)]);
         Nonce::from(nonce)
     }
 
@@ -92,9 +83,9 @@ impl CipherState {
                     Err(_) => return Err(CipherError::EncryptionFail().into())
                 };
             self.n += 1;
-            return Ok(result);
+            Ok(result)
         } else {
-            return Ok(plaintext.to_owned());
+           Ok(plaintext.to_owned())
         }
     }
 
@@ -120,7 +111,7 @@ impl CipherState {
             self.n += 1;
             Ok(result)
         } else {
-            return Ok(ciphertext.to_vec())
+            Ok(ciphertext.to_vec())
         }
     }
 
@@ -133,6 +124,14 @@ impl CipherState {
         todo!()
     }
 }
+
+
+impl Default for CipherState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 
 /// Implementation of the HKDF function specified in the noise protocol.
 ///

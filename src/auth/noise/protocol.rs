@@ -14,7 +14,8 @@ use super::{
 
 use std::error::Error;
 
-const SIGNATURE_PREFIX: &'static [u8; 24] = b"noise-libp2p-static-key:";
+const SIGNATURE_PREFIX: &[u8; 24] = b"noise-libp2p-static-key:";
+
 
 pub struct NoiseProtocol {}
 
@@ -103,7 +104,7 @@ impl<'a, C: Connection> SecureChannel for NoiseChannel<'a, C> {
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
-        let encrypted_data = self.encrypter.encrypt_with_ad(&[], &data)?;
+        let encrypted_data = self.encrypter.encrypt_with_ad(&[], data)?;
         (self.writer)(&mut self.connection, &encrypted_data)?;
         Ok(())
     }
@@ -116,11 +117,9 @@ impl NoiseProtocol {
     ) -> Result<Vec<u8>, Box<dyn Error>> {
         // Create payloads to be serialized
         let mut payload = handshake::NoiseHandshakePayload::default();
-        let mut key_payload = handshake::PublicKey::default();
 
         // Add the PeerID to the HandshakePayload
-        key_payload.r#type = 1; //ed25519
-        key_payload.data = keypair.public.as_bytes().to_vec();
+        let key_payload = handshake::PublicKey { r#type: 1, data: keypair.public.as_bytes().to_vec() };
         let mut buf = vec![];
         key_payload.encode(&mut buf)?;
         payload.identity_key = Some(buf);

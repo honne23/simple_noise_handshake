@@ -7,7 +7,7 @@ use rand::rngs::OsRng;
 use x25519_dalek::{PublicKey, StaticSecret};
 use thiserror::Error;
 
-const PROTOCOL_NAME: &'static [u8; 32] = b"Noise_XX_25519_ChaChaPoly_SHA256";
+const PROTOCOL_NAME: &[u8; 32] = b"Noise_XX_25519_ChaChaPoly_SHA256";
 
 #[derive(Error, Debug)]
 pub enum HandshakeError {
@@ -25,6 +25,12 @@ impl StaticKeypair {
         let secret = StaticSecret::new(OsRng);
         let public = PublicKey::from(&secret);
         StaticKeypair(public, secret)
+    }
+}
+
+impl Default for StaticKeypair {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -53,11 +59,11 @@ impl HandshakeState {
         let mut sym_state = SymmetricState::new(PROTOCOL_NAME);
         sym_state.mix_hash(prologue);
         HandshakeState {
-            s: s,
-            e: e,
-            rs: rs,
-            re: re,
-            initiator: initiator,
+            s,
+            e,
+            rs,
+            re,
+            initiator,
             symmetric_state: sym_state,
         }
     }
@@ -150,7 +156,7 @@ impl HandshakeState {
                     let window = if has_key { ..DHLEN + 16 } else { ..DHLEN };
                     let temp = &received[window];
                     let mut remote_static_bytes: [u8; DHLEN] = [0; DHLEN];
-                    let payload = self.symmetric_state
+                    self.symmetric_state
                         .decrypt_and_hash(temp)?
                         .iter()
                         .enumerate()
