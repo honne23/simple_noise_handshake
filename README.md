@@ -87,7 +87,7 @@ cargo test --package noise_handshake --test noise_handshake_integration -- noise
 The integration test should print out `YAMUX RESP: "\u{13}/multistream/1.0.0\n\u{f}/ipfs/id/1.0.0\n"` upon successful connection to a peer to
 indicate that the `authentication` handshake and `multiplexer` has been negotiated.
 
-## TODO
+## Where to go from here?
 - The `CipherState` implemention is barebones and likely lacks quite a few security checks (such as bounds on the `Nonces`)
 - At the moment there is no implementation for `async Connections`, these could straightforwardly be support by the `TokioTcpStream` as opposed to the `std::net::TcpStream` in use now.
 - Multiplexing is not implemented correctly outside of the integration test, support for `Yamux` and more general multiplexing should be developed

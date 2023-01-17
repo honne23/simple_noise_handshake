@@ -59,7 +59,7 @@ mod tests {
         ).unwrap();
         // Read from local
         println!("Local Read: [e, ee, s, es]");
-        let stage2 = hss_local.read_message(
+        hss_local.read_message(
             &respond,
             vec![
                 MessagePattern::E,
